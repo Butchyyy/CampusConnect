@@ -38,7 +38,7 @@ class Achievement {
       id: json['id'],
       title: json['title'],
       description: json['description'],
-      icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+      icon: const IconData(0xe800, fontFamily: 'MaterialIcons'),
       unlocked: json['unlocked'],
       requiredValue: json['requiredValue'],
       currentValue: json['currentValue'],
