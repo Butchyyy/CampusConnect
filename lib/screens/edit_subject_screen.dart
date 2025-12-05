@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/subject.dart';
+import '../services/supabase_service.dart';
 
 class EditSubjectScreen extends StatefulWidget {
   final Subject subject;
@@ -65,12 +66,72 @@ class _EditSubjectScreenState extends State<EditSubjectScreen> {
     Navigator.pop(context, updatedSubject);
   }
 
+  Future<void> _deleteSubject() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Subject'),
+        content: Text('Are you sure you want to delete "${widget.subject.name}"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Deleting subject...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+
+      // Delete from database
+      final success = await SupabaseService.deleteSubject(widget.subject.id);
+
+      if (mounted) {
+        if (success) {
+          // Wait a moment to ensure database deletion is complete
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Pop with a special map containing deletion info
+          // This tells the dashboard that a subject was deleted
+          Navigator.pop(context, {
+            'action': 'delete',
+            'subjectId': widget.subject.id,
+          });
+
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete subject')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Subject'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: _deleteSubject,
+          ),
           IconButton(
             icon: const Icon(Icons.check),
             onPressed: _saveSubject,

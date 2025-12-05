@@ -261,7 +261,7 @@ class AchievementsScreen extends StatelessWidget {
   }
 
   Widget _buildStatsOverview(int unlocked, int total) {
-    final percentage = (unlocked / total * 100).toInt();
+    final percentage = total > 0 ? (unlocked / total * 100).toInt() : 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -333,7 +333,7 @@ class AchievementsScreen extends StatelessWidget {
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color:  Color(700),
+            color: Color(0xFF2D3748), // FIXED: Changed from Color(700)
           ),
         ),
         const SizedBox(height: 2),
@@ -617,7 +617,8 @@ class AchievementsScreen extends StatelessWidget {
         title: 'Punctuality Pro',
         description: 'Never late for 20 classes',
         icon: Icons.timer,
-        unlocked: onTimeCount >= 20 && lateCount == 0,
+        // FIXED: Changed logic to only count on-time records
+        unlocked: onTimeCount >= 20,
         requiredValue: 20,
         currentValue: min(onTimeCount, 20),
       ),

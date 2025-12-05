@@ -27,10 +27,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPad = MediaQuery
-        .of(context)
-        .padding
-        .bottom + kBottomNavigationBarHeight;
+    final bottomPad = MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return SafeArea(
       child: Container(
@@ -46,16 +44,18 @@ class _TrackingScreenState extends State<TrackingScreen> {
         ),
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-              20, 20, 20, 20 + bottomPad),
+              screenWidth < 360 ? 12 : 16,
+              16,
+              screenWidth < 360 ? 12 : 16,
+              16 + bottomPad),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment
-                .start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildMarkAttendanceCard(),
-              const SizedBox(height: 24),
-              _buildRecentAttendanceSection(),
+              _buildHeader(screenWidth),
+              SizedBox(height: screenWidth < 360 ? 16 : 20),
+              _buildMarkAttendanceCard(screenWidth),
+              SizedBox(height: screenWidth < 360 ? 16 : 20),
+              _buildRecentAttendanceSection(screenWidth),
             ],
           ),
         ),
@@ -63,85 +63,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment
-            .spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment
-                .start,
-            children: [
-              const Text(
-                'Attendance Tracking',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${widget.attendanceRecords
-                    .length} total records',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blue.shade400,
-                  Colors.green.shade400
-                ],
-              ),
-              borderRadius: BorderRadius.circular(
-                  12),
-            ),
-            child: Text(
-              '${DateTime
-                  .now()
-                  .day}/${DateTime
-                  .now()
-                  .month}/${DateTime
-                  .now()
-                  .year}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildHeader(double screenWidth) {
+    final isSmall = screenWidth < 360;
+    final isMedium = screenWidth < 400;
 
-  Widget _buildMarkAttendanceCard() {
     return Container(
+      padding: EdgeInsets.all(isSmall ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -151,16 +81,89 @@ class _TrackingScreenState extends State<TrackingScreen> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment
-            .start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Attendance Tracking',
+                  style: TextStyle(
+                    fontSize: isSmall ? 18 : isMedium ? 22 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF2D3748),
+                  ),
+                ),
+              ),
+              if (screenWidth >= 360)
+                const SizedBox(width: 8),
+            ],
+          ),
+          SizedBox(height: isSmall ? 4 : 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${widget.attendanceRecords.length} total records',
+                style: TextStyle(
+                  fontSize: isSmall ? 11 : 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: isSmall ? 8 : 12,
+                    vertical: isSmall ? 4 : 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.blue.shade400,
+                      Colors.green.shade400
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isSmall ? 10 : 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMarkAttendanceCard(double screenWidth) {
+    final isSmall = screenWidth < 360;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isSmall ? 12 : 16),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(
-                      12),
+                  padding: EdgeInsets.all(isSmall ? 8 : 10),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -168,23 +171,21 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         Colors.green.shade400
                       ],
                     ),
-                    borderRadius: BorderRadius
-                        .circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons
-                        .check_circle_outline_rounded,
+                  child: Icon(
+                    Icons.check_circle_outline_rounded,
                     color: Colors.white,
-                    size: 24,
+                    size: isSmall ? 18 : 20,
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                SizedBox(width: isSmall ? 8 : 12),
+                Text(
                   'Mark Attendance',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: isSmall ? 16 : 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3748),
+                    color: const Color(0xFF2D3748),
                   ),
                 ),
               ],
@@ -192,13 +193,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ),
           const Divider(height: 1),
           widget.subjects.isEmpty
-              ? _buildEmptySubjectsState()
+              ? _buildEmptySubjectsState(screenWidth)
               : Column(
             children: [
               ...widget.subjects.map((subject) =>
-                  _buildSubjectTile(subject)),
+                  _buildSubjectTile(subject, screenWidth)),
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(isSmall ? 12 : 16),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -207,58 +208,41 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         Colors.green.shade400
                       ],
                     ),
-                    borderRadius: BorderRadius
-                        .circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue
-                            .withOpacity(0.3),
+                        color: Colors.blue.withOpacity(0.3),
                         blurRadius: 8,
-                        offset: const Offset(
-                            0, 4),
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: ElevatedButton.icon(
-                    onPressed: _isSubmitting
-                        ? null
-                        : _submitAttendance,
+                    onPressed: _isSubmitting ? null : _submitAttendance,
                     icon: _isSubmitting
-                        ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
+                        ? SizedBox(
+                      width: isSmall ? 18 : 20,
+                      height: isSmall ? 18 : 20,
+                      child: const CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<
-                            Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                        : const Icon(
-                        Icons.check_rounded,
-                        size: 22),
+                        : Icon(Icons.check_rounded, size: isSmall ? 18 : 20),
                     label: Text(
-                      _isSubmitting
-                          ? 'Submitting...'
-                          : 'Submit Attendance',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight
-                            .bold,
+                      _isSubmitting ? 'Submitting...' : 'Submit Attendance',
+                      style: TextStyle(
+                        fontSize: isSmall ? 13 : 14,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    style: ElevatedButton
-                        .styleFrom(
-                      backgroundColor: Colors
-                          .transparent,
-                      foregroundColor: Colors
-                          .white,
-                      shadowColor: Colors
-                          .transparent,
-                      minimumSize: const Size
-                          .fromHeight(52),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      minimumSize: Size.fromHeight(isSmall ? 44 : 48),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius
-                            .circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
@@ -271,54 +255,46 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  Widget _buildSubjectTile(Subject subject) {
-    final isSelected = _selectedSubjects[subject
-        .id] ?? false;
-    final percentage = _calculateAttendancePercentage(
-        subject.id);
+  Widget _buildSubjectTile(Subject subject, double screenWidth) {
+    final isSelected = _selectedSubjects[subject.id] ?? false;
+    final percentage = _calculateAttendancePercentage(subject.id);
+    final isSmall = screenWidth < 360;
 
     return InkWell(
       onTap: () {
         setState(() {
-          _selectedSubjects[subject.id] =
-          !isSelected;
+          _selectedSubjects[subject.id] = !isSelected;
         });
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(16),
+        margin: EdgeInsets.symmetric(
+            horizontal: isSmall ? 8 : 12,
+            vertical: isSmall ? 4 : 6),
+        padding: EdgeInsets.all(isSmall ? 10 : 12),
         decoration: BoxDecoration(
-          color: isSelected ? subject.color
-              .withOpacity(0.1) : Colors.grey
-              .shade50,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? subject.color.withOpacity(0.1) : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected
-                ? subject.color
-                : Colors.grey.shade200,
+            color: isSelected ? subject.color : Colors.grey.shade200,
             width: 2,
           ),
         ),
         child: Row(
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: isSmall ? 44 : 48,
+              height: isSmall ? 44 : 48,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     subject.color,
-                    subject.color.withOpacity(
-                        0.7),
+                    subject.color.withOpacity(0.7),
                   ],
                 ),
-                borderRadius: BorderRadius
-                    .circular(12),
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: subject.color
-                        .withOpacity(0.3),
+                    color: subject.color.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -326,64 +302,59 @@ class _TrackingScreenState extends State<TrackingScreen> {
               ),
               child: Center(
                 child: Text(
-                  subject.name.isNotEmpty
-                      ? subject.name[0]
-                      .toUpperCase()
-                      : '?',
-                  style: const TextStyle(
+                  subject.name.isNotEmpty ? subject.name[0].toUpperCase() : '?',
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                    fontSize: isSmall ? 18 : 20,
                     color: Colors.white,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: isSmall ? 10 : 12),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment
-                    .start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     subject.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF2D3748),
+                      fontSize: isSmall ? 13 : 14,
+                      color: const Color(0xFF2D3748),
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets
-                            .symmetric(
-                            horizontal: 8,
+                        padding: EdgeInsets.symmetric(
+                            horizontal: isSmall ? 6 : 8,
                             vertical: 2),
                         decoration: BoxDecoration(
-                          color: _getPercentageColor(
-                              double.parse(
-                                  percentage)),
-                          borderRadius: BorderRadius
-                              .circular(6),
+                          color: _getPercentageColor(double.parse(percentage)),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           '$percentage%',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight
-                                .bold,
+                            fontSize: isSmall ? 10 : 11,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'attendance',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey
-                              .shade600,
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'attendance',
+                          style: TextStyle(
+                            fontSize: isSmall ? 10 : 11,
+                            color: Colors.grey.shade600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -391,27 +362,23 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Container(
-              width: 28,
-              height: 28,
+              width: isSmall ? 24 : 26,
+              height: isSmall ? 24 : 26,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? subject.color
-                    : Colors.transparent,
+                color: isSelected ? subject.color : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? subject
-                      .color : Colors.grey
-                      .shade400,
+                  color: isSelected ? subject.color : Colors.grey.shade400,
                   width: 2,
                 ),
-                borderRadius: BorderRadius
-                    .circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: isSelected
-                  ? const Icon(
+                  ? Icon(
                 Icons.check_rounded,
                 color: Colors.white,
-                size: 20,
+                size: isSmall ? 16 : 18,
               )
                   : null,
             ),
@@ -421,40 +388,43 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  Widget _buildEmptySubjectsState() {
+  Widget _buildEmptySubjectsState(double screenWidth) {
+    final isSmall = screenWidth < 360;
+
     return Padding(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(isSmall ? 24 : 32),
       child: Center(
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isSmall ? 16 : 20),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.book_outlined,
-                size: 60,
+                size: isSmall ? 44 : 52,
                 color: Colors.grey.shade400,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: isSmall ? 12 : 16),
             Text(
               'No subjects available',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: isSmall ? 14 : 15,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey.shade700,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isSmall ? 4 : 8),
             Text(
               'Add subjects first to mark attendance',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: isSmall ? 11 : 12,
                 color: Colors.grey.shade500,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -462,68 +432,68 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  Widget _buildRecentAttendanceSection() {
+  Widget _buildRecentAttendanceSection(double screenWidth) {
+    final isSmall = screenWidth < 360;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment
-          .start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 20, vertical: 16),
+          padding: EdgeInsets.symmetric(
+              horizontal: isSmall ? 12 : 16,
+              vertical: isSmall ? 10 : 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(
-                16),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(
-                    0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: const Row(
+          child: Row(
             children: [
               Icon(Icons.history_rounded,
-                  color: Color(0xFF2D3748)),
-              SizedBox(width: 8),
+                  color: const Color(0xFF2D3748),
+                  size: isSmall ? 18 : 20),
+              SizedBox(width: isSmall ? 6 : 8),
               Text(
                 'Recent Attendance',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: isSmall ? 16 : 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
+                  color: const Color(0xFF2D3748),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: isSmall ? 10 : 12),
         widget.attendanceRecords.isEmpty
-            ? _buildEmptyRecordsState()
+            ? _buildEmptyRecordsState(screenWidth)
             : Column(
-          children: widget.attendanceRecords.take(
-              15).map((record) {
-            final subject = widget.subjects
-                .firstWhere(
+          children: widget.attendanceRecords.take(15).map((record) {
+            final subject = widget.subjects.firstWhere(
                   (s) => s.id == record.subjectId,
               orElse: () => Subject.fallback(),
             );
-            return _buildAttendanceRecord(
-                record, subject);
+            return _buildAttendanceRecord(record, subject, screenWidth);
           }).toList(),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyRecordsState() {
+  Widget _buildEmptyRecordsState(double screenWidth) {
+    final isSmall = screenWidth < 360;
+
     return Container(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(isSmall ? 24 : 32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -536,33 +506,34 @@ class _TrackingScreenState extends State<TrackingScreen> {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isSmall ? 16 : 20),
               decoration: BoxDecoration(
                 color: Colors.green.shade50,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.event_available_rounded,
-                size: 60,
+                size: isSmall ? 44 : 52,
                 color: Colors.green.shade300,
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: isSmall ? 12 : 16),
+            Text(
               'No attendance records yet',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: isSmall ? 14 : 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2D3748),
+                color: const Color(0xFF2D3748),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isSmall ? 4 : 8),
             Text(
               'Mark attendance to see records here',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: isSmall ? 11 : 12,
                 color: Colors.grey.shade600,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -570,16 +541,16 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  Widget _buildAttendanceRecord(
-      AttendanceRecord record, Subject subject) {
+  Widget _buildAttendanceRecord(AttendanceRecord record, Subject subject, double screenWidth) {
+    final isSmall = screenWidth < 360;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: isSmall ? 8 : 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: record.present ? Colors.green
-              .shade100 : Colors.red.shade100,
+          color: record.present ? Colors.green.shade100 : Colors.red.shade100,
           width: 1,
         ),
         boxShadow: [
@@ -591,12 +562,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
         ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets
-            .symmetric(
-            horizontal: 16, vertical: 12),
+        contentPadding: EdgeInsets.symmetric(
+            horizontal: isSmall ? 10 : 12,
+            vertical: isSmall ? 6 : 8),
         leading: Container(
-          width: 56,
-          height: 56,
+          width: isSmall ? 44 : 48,
+          height: isSmall ? 44 : 48,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -604,12 +575,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 subject.color.withOpacity(0.7),
               ],
             ),
-            borderRadius: BorderRadius.circular(
-                12),
+            borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
-                color: subject.color.withOpacity(
-                    0.3),
+                color: subject.color.withOpacity(0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -617,11 +586,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ),
           child: Center(
             child: Text(
-              subject.name.isNotEmpty ? subject
-                  .name[0].toUpperCase() : '?',
-              style: const TextStyle(
+              subject.name.isNotEmpty ? subject.name[0].toUpperCase() : '?',
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 22,
+                fontSize: isSmall ? 18 : 20,
                 color: Colors.white,
               ),
             ),
@@ -629,57 +597,46 @@ class _TrackingScreenState extends State<TrackingScreen> {
         ),
         title: Text(
           subject.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: Color(0xFF2D3748),
+            fontSize: isSmall ? 13 : 14,
+            color: const Color(0xFF2D3748),
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
+          padding: const EdgeInsets.only(top: 4),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment
-                .start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(Icons
-                      .calendar_today_rounded,
-                      size: 14,
-                      color: Colors.grey
-                          .shade600),
+                  Icon(Icons.calendar_today_rounded,
+                      size: isSmall ? 11 : 12,
+                      color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    '${record.date.day}/${record
-                        .date.month}/${record.date
-                        .year}',
-                    style: TextStyle(fontSize: 13,
-                        color: Colors.grey
-                            .shade700),
+                    '${record.date.day}/${record.date.month}/${record.date.year}',
+                    style: TextStyle(
+                        fontSize: isSmall ? 11 : 12,
+                        color: Colors.grey.shade700),
                   ),
                 ],
               ),
               if (record.checkInTime != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Row(
                   children: [
-                    Icon(
-                        Icons.access_time_rounded,
-                        size: 14,
-                        color: Colors.grey
-                            .shade600),
+                    Icon(Icons.access_time_rounded,
+                        size: isSmall ? 11 : 12,
+                        color: Colors.grey.shade600),
                     const SizedBox(width: 4),
                     Text(
-                      'Check-in: ${record
-                          .checkInTime!
-                          .hour}:${record
-                          .checkInTime!.minute
-                          .toString().padLeft(
-                          2, '0')}',
+                      'Check-in: ${record.checkInTime!.hour}:${record.checkInTime!.minute.toString().padLeft(2, '0')}',
                       style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey
-                              .shade700),
+                          fontSize: isSmall ? 10 : 11,
+                          color: Colors.grey.shade700),
                     ),
                   ],
                 ),
@@ -692,36 +649,28 @@ class _TrackingScreenState extends State<TrackingScreen> {
           children: [
             if (record.late)
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(isSmall ? 4 : 6),
                 decoration: BoxDecoration(
                   color: Colors.orange.shade50,
-                  borderRadius: BorderRadius
-                      .circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
                   Icons.access_time_rounded,
                   color: Colors.orange.shade700,
-                  size: 20,
+                  size: isSmall ? 16 : 18,
                 ),
               ),
-            const SizedBox(width: 8),
+            SizedBox(width: isSmall ? 4 : 6),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(isSmall ? 4 : 6),
               decoration: BoxDecoration(
-                color: record.present ? Colors
-                    .green.shade50 : Colors.red
-                    .shade50,
-                borderRadius: BorderRadius
-                    .circular(8),
+                color: record.present ? Colors.green.shade50 : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
-                record.present ? Icons
-                    .check_circle_rounded : Icons
-                    .cancel_rounded,
-                color: record.present ? Colors
-                    .green.shade700 : Colors.red
-                    .shade700,
-                size: 24,
+                record.present ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                color: record.present ? Colors.green.shade700 : Colors.red.shade700,
+                size: isSmall ? 18 : 20,
               ),
             ),
           ],
@@ -731,19 +680,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   Color _getPercentageColor(double percentage) {
-    if (percentage >= 75)
-      return Colors.green.shade600;
-    if (percentage >= 50)
-      return Colors.orange.shade600;
+    if (percentage >= 75) return Colors.green.shade600;
+    if (percentage >= 50) return Colors.orange.shade600;
     return Colors.red.shade600;
   }
 
-  String _calculateAttendancePercentage(
-      String subjectId) {
-    final subjectRecords = widget
-        .attendanceRecords
-        .where((record) =>
-    record.subjectId == subjectId)
+  String _calculateAttendancePercentage(String subjectId) {
+    final subjectRecords = widget.attendanceRecords
+        .where((record) => record.subjectId == subjectId)
         .toList();
 
     if (subjectRecords.isEmpty) return '0.0';
@@ -751,15 +695,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
     final presentCount = subjectRecords
         .where((record) => record.present)
         .length;
-    final percentage = (presentCount /
-        subjectRecords.length) * 100;
+    final percentage = (presentCount / subjectRecords.length) * 100;
 
     return percentage.toStringAsFixed(1);
   }
 
   Future<void> _submitAttendance() async {
-    final selectedSubjectIds = _selectedSubjects
-        .entries
+    final selectedSubjectIds = _selectedSubjects.entries
         .where((entry) => entry.value)
         .map((entry) => entry.key)
         .toList();
@@ -767,13 +709,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
     if (selectedSubjectIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-              'Please select at least one subject'),
+          content: const Text('Please select at least one subject'),
           backgroundColor: Colors.orange.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-                10),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       );
@@ -786,25 +726,44 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     try {
       final now = DateTime.now();
+      int successCount = 0;
+      int alreadyMarkedCount = 0;
+      List<AttendanceRecord> newRecords = [];
 
-      // CHECK: Has attendance already been submitted today?
-      final hasAttendanceToday = await SupabaseService
-          .hasAttendanceForToday();
+      for (final subjectId in selectedSubjectIds) {
+        final newRecord = AttendanceRecord(
+          id: 'att_${DateTime.now().millisecondsSinceEpoch}_$subjectId',
+          date: now,
+          subjectId: subjectId,
+          present: true,
+          late: false,
+          checkInTime: now,
+        );
 
-      if (hasAttendanceToday) {
+        final result = await SupabaseService.addAttendanceRecord(newRecord);
+
+        if (result != null) {
+          newRecords.add(result);
+          successCount++;
+        } else {
+          alreadyMarkedCount++;
+        }
+
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      if (successCount == 0 && alreadyMarkedCount > 0) {
         if (mounted) {
-          ScaffoldMessenger
-              .of(context)
-              .showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
-                  'You have already submitted attendance today'),
-              backgroundColor: Colors.orange
-                  .shade700,
+              content: Text(
+                  alreadyMarkedCount == 1
+                      ? 'Attendance already submitted for this subject today'
+                      : 'Attendance already submitted for all selected subjects today'),
+              backgroundColor: Colors.orange.shade700,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius
-                    .circular(10),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           );
@@ -812,62 +771,27 @@ class _TrackingScreenState extends State<TrackingScreen> {
         return;
       }
 
-      // Only submit attendance for the FIRST selected subject
-      final firstSubjectId = selectedSubjectIds
-          .first;
-
-      final newRecord = AttendanceRecord(
-        id: 'att_${DateTime
-            .now()
-            .millisecondsSinceEpoch}',
-        date: now,
-        subjectId: firstSubjectId,
-        present: true,
-        late: false,
-        checkInTime: now,
-      );
-
-      // Use SupabaseService to add the record
-      final result = await SupabaseService
-          .addAttendanceRecord(newRecord);
-
-      if (result == null) {
-        if (mounted) {
-          ScaffoldMessenger
-              .of(context)
-              .showSnackBar(
-            SnackBar(
-              content: const Text(
-                  'Attendance already submitted today'),
-              backgroundColor: Colors.orange
-                  .shade700,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius
-                    .circular(10),
-              ),
-            ),
-          );
-        }
-        return;
+      for (final record in newRecords.reversed) {
+        widget.attendanceRecords.insert(0, record);
       }
-
-      // Add to local list for immediate UI update
-      widget.attendanceRecords.insert(0, result);
 
       if (mounted) {
-        ScaffoldMessenger
-            .of(context)
-            .showSnackBar(
+        String message = '';
+        if (successCount > 0 && alreadyMarkedCount > 0) {
+          message = 'Attendance marked for $successCount subject${successCount > 1 ? 's' : ''}. $alreadyMarkedCount already marked today.';
+        } else if (successCount > 0) {
+          message = successCount == 1
+              ? 'Attendance marked successfully'
+              : 'Attendance marked for $successCount subjects';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-                'Attendance marked successfully'),
-            backgroundColor: Colors.green
-                .shade600,
+            content: Text(message),
+            backgroundColor: Colors.green.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                  10),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
         );
@@ -880,18 +804,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger
-            .of(context)
-            .showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'Error saving attendance: ${e
-                    .toString()}'),
+            content: Text('Error saving attendance: ${e.toString()}'),
             backgroundColor: Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                  10),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
         );

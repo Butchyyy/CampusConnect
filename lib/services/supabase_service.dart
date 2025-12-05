@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/subject.dart';
 import '../models/schedule.dart';
 import '../models/tracking_record.dart';
@@ -7,7 +8,6 @@ import '../models/assignment.dart';
 
 class SupabaseService {
   static final SupabaseClient _client = Supabase.instance.client;
-  static String? _userId;
 
   // Initialize Supabase
   static Future<void> initialize({
@@ -18,34 +18,50 @@ class SupabaseService {
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
     );
+    print('✅ Supabase initialized');
+  }
 
+  // ✅ Get user ID from Firebase with detailed logging
+  static String get userId {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid;
 
-    final user = _client.auth.currentUser;
-    if (user == null) {
-      // Sign in anonymously for demo purposes
-      final response = await _client.auth.signInAnonymously();
-      _userId = response.user?.id;
-    } else {
-      _userId = user.id;
+    print('🔍 Getting userId from Firebase:');
+    print('   - User: ${user?.email ?? "null"}');
+    print('   - UID: ${uid ?? "null"}');
+
+    if (uid == null || uid.isEmpty) {
+      print('❌ ERROR: No user logged in!');
+      throw Exception('No user logged in. Please sign in first.');
     }
+
+    return uid;
   }
 
-  static Future<String> _getOrCreateUserId() async {
-    final user = _client.auth.currentUser;
-    return user?.id ?? 'anonymous';
+  // ✅ Safe check if user is logged in
+  static bool get isUserLoggedIn {
+    final user = FirebaseAuth.instance.currentUser;
+    final isLoggedIn = user != null;
+    print('🔍 isUserLoggedIn: $isLoggedIn (${user?.email ?? "null"})');
+    return isLoggedIn;
   }
-
-  static String get userId => _userId ?? _client.auth.currentUser?.id ?? 'anonymous';
-
-
 
   static Future<List<Subject>> getSubjects() async {
     try {
+      if (!isUserLoggedIn) {
+        print('⚠️ No user logged in, returning empty list');
+        return [];
+      }
+
+      print('📚 Fetching subjects for user: $userId');
+
       final response = await _client
           .from('subjects')
           .select()
           .eq('user_id', userId)
           .order('created_at');
+
+      print('✅ Fetched ${(response as List).length} subjects');
 
       return (response as List)
           .map((json) => Subject(
@@ -60,14 +76,27 @@ class SupabaseService {
       ))
           .toList();
     } catch (e) {
-      print('Error fetching subjects: $e');
+      print('❌ Error fetching subjects: $e');
       return [];
     }
   }
 
   static Future<Subject?> addSubject(Subject subject) async {
     try {
-      final response = await _client.from('subjects').insert({
+      if (!isUserLoggedIn) {
+        print('❌ Cannot add subject - no user logged in');
+        throw Exception('No user logged in');
+      }
+
+      print('➕ Adding subject to Supabase:');
+      print('   - User ID: $userId');
+      print('   - Name: ${subject.name}');
+      print('   - Code: ${subject.code}');
+      print('   - Instructor: ${subject.instructor}');
+      print('   - Credits: ${subject.credits}');
+      print('   - Color: ${subject.color.value}');
+
+      final data = {
         'user_id': userId,
         'name': subject.name,
         'code': subject.code,
@@ -76,7 +105,18 @@ class SupabaseService {
         'color': subject.color.value,
         'total_classes': subject.totalClasses ?? 0,
         'attended_classes': subject.attendedClasses ?? 0,
-      }).select().single();
+      };
+
+      print('📤 Sending data to Supabase: $data');
+
+      final response = await _client
+          .from('subjects')
+          .insert(data)
+          .select()
+          .single();
+
+      print('✅ Subject added successfully!');
+      print('📥 Response: $response');
 
       return Subject(
         id: response['id'],
@@ -88,14 +128,29 @@ class SupabaseService {
         totalClasses: response['total_classes'],
         attendedClasses: response['attended_classes'],
       );
+    } on PostgrestException catch (e) {
+      print('❌ Supabase error adding subject:');
+      print('   - Message: ${e.message}');
+      print('   - Code: ${e.code}');
+      print('   - Details: ${e.details}');
+      print('   - Hint: ${e.hint}');
+      throw Exception('Database error: ${e.message}');
     } catch (e) {
-      print('Error adding subject: $e');
-      return null;
+      print('❌ Unexpected error adding subject: $e');
+      print('   - Type: ${e.runtimeType}');
+      throw Exception('Failed to add subject: ${e.toString()}');
     }
   }
 
   static Future<bool> updateSubject(Subject subject) async {
     try {
+      if (!isUserLoggedIn) {
+        print('❌ Cannot update subject - no user logged in');
+        return false;
+      }
+
+      print('🔄 Updating subject: ${subject.id}');
+
       await _client.from('subjects').update({
         'name': subject.name,
         'code': subject.code,
@@ -105,29 +160,46 @@ class SupabaseService {
         'total_classes': subject.totalClasses ?? 0,
         'attended_classes': subject.attendedClasses ?? 0,
         'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', subject.id);
+      }).eq('id', subject.id).eq('user_id', userId);
 
+      print('✅ Subject updated successfully');
       return true;
     } catch (e) {
-      print('Error updating subject: $e');
+      print('❌ Error updating subject: $e');
       return false;
     }
   }
 
   static Future<bool> deleteSubject(String subjectId) async {
     try {
-      await _client.from('subjects').delete().eq('id', subjectId);
+      if (!isUserLoggedIn) {
+        print('❌ Cannot delete subject - no user logged in');
+        return false;
+      }
+
+      print('🗑️ Deleting subject: $subjectId');
+
+      await _client
+          .from('subjects')
+          .delete()
+          .eq('id', subjectId)
+          .eq('user_id', userId);
+
+      print('✅ Subject deleted successfully');
       return true;
     } catch (e) {
-      print('Error deleting subject: $e');
+      print('❌ Error deleting subject: $e');
       return false;
     }
   }
 
-
-
   static Future<List<ClassSchedule>> getSchedules() async {
     try {
+      if (!isUserLoggedIn) {
+        print('⚠️ No user logged in, returning empty list');
+        return [];
+      }
+
       final response = await _client
           .from('schedules')
           .select()
@@ -146,13 +218,18 @@ class SupabaseService {
       ))
           .toList();
     } catch (e) {
-      print('Error fetching schedules: $e');
+      print('❌ Error fetching schedules: $e');
       return [];
     }
   }
 
   static Future<ClassSchedule?> addSchedule(ClassSchedule schedule) async {
     try {
+      if (!isUserLoggedIn) {
+        print('❌ Cannot add schedule - no user logged in');
+        return null;
+      }
+
       final response = await _client.from('schedules').insert({
         'user_id': userId,
         'subject_id': schedule.subjectId,
@@ -173,13 +250,18 @@ class SupabaseService {
         fileToCheck: response['file_to_check'],
       );
     } catch (e) {
-      print('Error adding schedule: $e');
+      print('❌ Error adding schedule: $e');
       return null;
     }
   }
 
   static Future<bool> updateSchedule(ClassSchedule schedule) async {
     try {
+      if (!isUserLoggedIn) {
+        print('❌ Cannot update schedule - no user logged in');
+        return false;
+      }
+
       await _client.from('schedules').update({
         'subject_id': schedule.subjectId,
         'day_of_week': schedule.dayOfWeek,
@@ -187,29 +269,42 @@ class SupabaseService {
         'end_time': schedule.endTime,
         'room': schedule.room,
         'file_to_check': schedule.fileToCheck,
-      }).eq('id', schedule.id);
+      }).eq('id', schedule.id).eq('user_id', userId);
 
       return true;
     } catch (e) {
-      print('Error updating schedule: $e');
+      print('❌ Error updating schedule: $e');
       return false;
     }
   }
 
   static Future<bool> deleteSchedule(String scheduleId) async {
     try {
-      await _client.from('schedules').delete().eq('id', scheduleId);
+      if (!isUserLoggedIn) {
+        print('❌ Cannot delete schedule - no user logged in');
+        return false;
+      }
+
+      await _client
+          .from('schedules')
+          .delete()
+          .eq('id', scheduleId)
+          .eq('user_id', userId);
+
       return true;
     } catch (e) {
-      print('Error deleting schedule: $e');
+      print('❌ Error deleting schedule: $e');
       return false;
     }
   }
 
-
-
   static Future<List<AttendanceRecord>> getAttendanceRecords() async {
     try {
+      if (!isUserLoggedIn) {
+        print('⚠️ No user logged in, returning empty list');
+        return [];
+      }
+
       final response = await _client
           .from('attendance_records')
           .select()
@@ -229,14 +324,38 @@ class SupabaseService {
       ))
           .toList();
     } catch (e) {
-      print('Error fetching attendance records: $e');
+      print('❌ Error fetching attendance records: $e');
       return [];
     }
   }
 
-  // NEW METHOD: Check if any attendance already exists for today
+  static Future<bool> hasAttendanceForSubjectToday(String subjectId) async {
+    try {
+      if (!isUserLoggedIn) return false;
+
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+      final response = await _client
+          .from('attendance_records')
+          .select()
+          .eq('user_id', userId)
+          .eq('subject_id', subjectId)
+          .gte('date', startOfDay.toIso8601String())
+          .lte('date', endOfDay.toIso8601String());
+
+      return (response as List).isNotEmpty;
+    } catch (e) {
+      print('❌ Error checking today\'s attendance for subject: $e');
+      return false;
+    }
+  }
+
   static Future<bool> hasAttendanceForToday() async {
     try {
+      if (!isUserLoggedIn) return false;
+
       final now = DateTime.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -250,24 +369,27 @@ class SupabaseService {
 
       return (response as List).isNotEmpty;
     } catch (e) {
-      print('Error checking today\'s attendance: $e');
+      print('❌ Error checking today\'s attendance: $e');
       return false;
     }
   }
 
-  // MODIFIED METHOD: Add attendance record with daily limit check
   static Future<AttendanceRecord?> addAttendanceRecord(
       AttendanceRecord record) async {
     try {
-      // Check if any attendance already exists for today
-      final hasAttendance = await hasAttendanceForToday();
-
-      if (hasAttendance) {
-        print('Attendance already recorded for today');
-        return null; // Return null to indicate already submitted today
+      if (!isUserLoggedIn) {
+        print('❌ Cannot add attendance - no user logged in');
+        return null;
       }
 
-      print('Adding attendance record: ${record.toJson()}');
+      final hasAttendance = await hasAttendanceForSubjectToday(record.subjectId);
+
+      if (hasAttendance) {
+        print('⚠️ Attendance already recorded for subject ${record.subjectId} today');
+        return null;
+      }
+
+      print('➕ Adding attendance record: ${record.toJson()}');
 
       final response = await _client.from('attendance_records').insert({
         'user_id': userId,
@@ -278,7 +400,7 @@ class SupabaseService {
         'check_in_time': record.checkInTime?.toIso8601String(),
       }).select().single();
 
-      print('Attendance record added successfully: $response');
+      print('✅ Attendance record added successfully: $response');
 
       return AttendanceRecord(
         id: response['id'],
@@ -291,16 +413,18 @@ class SupabaseService {
             : null,
       );
     } catch (e) {
-      print('Error adding attendance record: $e');
-      print('Error details: ${e.toString()}');
+      print('❌ Error adding attendance record: $e');
       return null;
     }
   }
 
-
-
   static Future<List<Assignment>> getAssignments() async {
     try {
+      if (!isUserLoggedIn) {
+        print('⚠️ No user logged in, returning empty list');
+        return [];
+      }
+
       final response = await _client
           .from('assignments')
           .select()
@@ -322,13 +446,18 @@ class SupabaseService {
       ))
           .toList();
     } catch (e) {
-      print('Error fetching assignments: $e');
+      print('❌ Error fetching assignments: $e');
       return [];
     }
   }
 
   static Future<Assignment?> addAssignment(Assignment assignment) async {
     try {
+      if (!isUserLoggedIn) {
+        print('❌ Cannot add assignment - no user logged in');
+        return null;
+      }
+
       final response = await _client.from('assignments').insert({
         'user_id': userId,
         'subject_id': assignment.subjectId,
@@ -353,13 +482,18 @@ class SupabaseService {
             : null,
       );
     } catch (e) {
-      print('Error adding assignment: $e');
+      print('❌ Error adding assignment: $e');
       return null;
     }
   }
 
   static Future<bool> updateAssignment(Assignment assignment) async {
     try {
+      if (!isUserLoggedIn) {
+        print('❌ Cannot update assignment - no user logged in');
+        return false;
+      }
+
       await _client.from('assignments').update({
         'title': assignment.title,
         'description': assignment.description,
@@ -369,21 +503,31 @@ class SupabaseService {
         'completed': assignment.completed,
         'completed_date': assignment.completedDate?.toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', assignment.id);
+      }).eq('id', assignment.id).eq('user_id', userId);
 
       return true;
     } catch (e) {
-      print('Error updating assignment: $e');
+      print('❌ Error updating assignment: $e');
       return false;
     }
   }
 
   static Future<bool> deleteAssignment(String assignmentId) async {
     try {
-      await _client.from('assignments').delete().eq('id', assignmentId);
+      if (!isUserLoggedIn) {
+        print('❌ Cannot delete assignment - no user logged in');
+        return false;
+      }
+
+      await _client
+          .from('assignments')
+          .delete()
+          .eq('id', assignmentId)
+          .eq('user_id', userId);
+
       return true;
     } catch (e) {
-      print('Error deleting assignment: $e');
+      print('❌ Error deleting assignment: $e');
       return false;
     }
   }

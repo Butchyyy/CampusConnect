@@ -27,6 +27,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = screenWidth < 360 ? 12.0 : 16.0;
 
     return SafeArea(
       child: Container(
@@ -41,12 +43,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
         ),
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomPad),
+          padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 16 + bottomPad),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               if (widget.subjects.isEmpty)
                 _buildEmptyState()
               else
@@ -65,11 +67,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildHeader() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final isMediumScreen = screenWidth < 400;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -78,60 +84,74 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Weekly Schedule',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Weekly Schedule',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 18 : (isMediumScreen ? 22 : 26),
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF2D3748),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${widget.schedules.length} ${widget.schedules.length == 1 ? 'class' : 'classes'}',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 11 : 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${widget.schedules.length} classes this week',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.blue.shade400, Colors.purple.shade400],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: widget.subjects.isEmpty
+                      ? null
+                      : () => _showAddScheduleDialog(),
+                  icon: Icon(Icons.add_rounded, size: isSmallScreen ? 16 : 18),
+                  label: Text(
+                    isSmallScreen ? 'Add' : 'Add Class',
+                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shadowColor: Colors.transparent,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSmallScreen ? 12 : 16,
+                      vertical: isSmallScreen ? 8 : 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
               ),
             ],
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade400, Colors.purple.shade400],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ElevatedButton.icon(
-              onPressed: widget.subjects.isEmpty
-                  ? null
-                  : () => _showAddScheduleDialog(),
-              icon: const Icon(Icons.add_rounded, size: 20),
-              label: const Text('Add Class'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -139,13 +159,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildEmptyState() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+
     return Center(
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 40),
-        padding: const EdgeInsets.all(40),
+        margin: const EdgeInsets.symmetric(vertical: 30),
+        padding: EdgeInsets.all(isSmallScreen ? 24 : 32),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -157,33 +180,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.calendar_today_rounded,
-                size: 60,
+                size: isSmallScreen ? 40 : 50,
                 color: Colors.blue.shade300,
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: isSmallScreen ? 12 : 16),
+            Text(
               'No subjects yet',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: isSmallScreen ? 16 : 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2D3748),
+                color: const Color(0xFF2D3748),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               'Add subjects first to create schedules',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: isSmallScreen ? 12 : 13,
                 color: Colors.grey.shade600,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -193,6 +217,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Widget _buildDaySchedule(
       BuildContext context, int day, List<ClassSchedule> daySchedules) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+
     const days = [
       'Monday',
       'Tuesday',
@@ -206,10 +233,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final dayEmojis = ['🌟', '🔥', '💪', '⚡', '🎯', '🌈', '☀️'];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -221,51 +248,54 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          childrenPadding: const EdgeInsets.only(bottom: 12),
+          tilePadding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 12 : 16,
+            vertical: isSmallScreen ? 4 : 6,
+          ),
+          childrenPadding: const EdgeInsets.only(bottom: 8),
           leading: Container(
-            width: 48,
-            height: 48,
+            width: isSmallScreen ? 38 : 44,
+            height: isSmallScreen ? 38 : 44,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.blue.shade400, Colors.purple.shade400],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
               child: Text(
                 dayEmojis[day - 1],
-                style: const TextStyle(fontSize: 24),
+                style: TextStyle(fontSize: isSmallScreen ? 18 : 20),
               ),
             ),
           ),
           title: Text(
             days[day - 1],
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Color(0xFF2D3748),
+              fontSize: isSmallScreen ? 14 : 16,
+              color: const Color(0xFF2D3748),
             ),
           ),
           subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: 2),
             child: Text(
               '${daySchedules.length} ${daySchedules.length == 1 ? 'class' : 'classes'}',
               style: TextStyle(
                 color: Colors.grey.shade600,
-                fontSize: 13,
+                fontSize: isSmallScreen ? 11 : 12,
               ),
             ),
           ),
           children: daySchedules.isEmpty
               ? [
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'No classes scheduled',
                 style: TextStyle(
                   color: Colors.grey.shade500,
-                  fontSize: 14,
+                  fontSize: isSmallScreen ? 12 : 13,
                 ),
               ),
             )
@@ -283,140 +313,167 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildClassCard(ClassSchedule schedule, Subject subject) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final isMediumScreen = screenWidth < 400;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 8 : 12,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: subject.color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: subject.color.withOpacity(0.3),
           width: 1,
         ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                subject.color,
-                subject.color.withOpacity(0.7),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: subject.color.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              subject.code.isNotEmpty ? subject.code : '?',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-        title: Text(
-          subject.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: Color(0xFF2D3748),
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.access_time_rounded,
-                      size: 16, color: Colors.grey.shade700),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${schedule.startTime} - ${schedule.endTime}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w500,
-                    ),
+      child: Padding(
+        padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: isSmallScreen ? 44 : 50,
+              height: isSmallScreen ? 44 : 50,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    subject.color,
+                    subject.color.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: subject.color.withOpacity(0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              if (schedule.room.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.location_on_rounded,
-                        size: 16, color: Colors.grey.shade700),
-                    const SizedBox(width: 6),
-                    Text(
-                      schedule.room,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
+              child: Center(
+                child: Text(
+                  subject.code.isNotEmpty ? subject.code : '?',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 11 : 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              ],
-              if (schedule.fileToCheck != null &&
-                  schedule.fileToCheck!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.folder_rounded,
-                        size: 16, color: Colors.blue.shade700),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Check: ${schedule.fileToCheck}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: IconButton(
-                icon: Icon(Icons.edit_rounded, size: 20, color: Colors.blue.shade700),
-                onPressed: () => _showEditScheduleDialog(schedule),
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
+            SizedBox(width: isSmallScreen ? 8 : 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    subject.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isSmallScreen ? 13 : 15,
+                      color: const Color(0xFF2D3748),
+                    ),
+                  ),
+                  SizedBox(height: isSmallScreen ? 4 : 6),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time_rounded,
+                          size: isSmallScreen ? 13 : 14,
+                          color: Colors.grey.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${schedule.startTime} - ${schedule.endTime}',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 11 : 12,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (schedule.room.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_rounded,
+                            size: isSmallScreen ? 13 : 14,
+                            color: Colors.grey.shade700),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            schedule.room,
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 11 : 12,
+                              color: Colors.grey.shade700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (schedule.fileToCheck != null &&
+                      schedule.fileToCheck!.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Icon(Icons.folder_rounded,
+                            size: isSmallScreen ? 13 : 14,
+                            color: Colors.blue.shade700),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            'Check: ${schedule.fileToCheck}',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 10 : 11,
+                              color: Colors.blue.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
-              child: IconButton(
-                icon: Icon(Icons.delete_rounded, size: 20, color: Colors.red.shade700),
-                onPressed: () => _deleteSchedule(schedule),
-              ),
+            ),
+            Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.edit_rounded,
+                        size: isSmallScreen ? 16 : 18,
+                        color: Colors.blue.shade700),
+                    padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _showEditScheduleDialog(schedule),
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 4 : 6),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.delete_rounded,
+                        size: isSmallScreen ? 16 : 18,
+                        color: Colors.red.shade700),
+                    padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _deleteSchedule(schedule),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -424,6 +481,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  // ... rest of the dialog methods remain the same ...
   Future<void> _showAddScheduleDialog() async {
     String? selectedSubjectId =
     widget.subjects.isNotEmpty ? widget.subjects.first.id : null;

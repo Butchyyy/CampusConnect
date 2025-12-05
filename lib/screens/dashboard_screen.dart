@@ -126,22 +126,47 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   }
 
   void _editSubject(BuildContext context, Subject subject) async {
-    final updatedSubject = await Navigator.push<Subject>(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditSubjectScreen(subject: subject),
       ),
     );
 
-    if (updatedSubject != null && widget.onSubjectUpdated != null && context.mounted) {
-      widget.onSubjectUpdated!(updatedSubject);
-      if (context.mounted) {
-        _showModernSnackBar(
-          context,
-          'Subject updated successfully',
-          Colors.green.shade600,
-          Icons.check_circle_rounded,
-        );
+    // Handle the result from EditSubjectScreen
+    if (result != null && context.mounted) {
+      // Check if it's a deletion action (result is a Map)
+      if (result is Map && result['action'] == 'delete') {
+        final String subjectId = result['subjectId'];
+
+        // Call the onSubjectDeleted callback to remove from parent state
+        if (widget.onSubjectDeleted != null) {
+          widget.onSubjectDeleted!(subjectId);
+        }
+
+        if (context.mounted) {
+          _showModernSnackBar(
+            context,
+            'Subject deleted successfully',
+            Colors.red.shade600,
+            Icons.delete_rounded,
+          );
+        }
+      }
+      // Otherwise it's an update action (result is a Subject)
+      else if (result is Subject) {
+        if (widget.onSubjectUpdated != null) {
+          widget.onSubjectUpdated!(result);
+        }
+
+        if (context.mounted) {
+          _showModernSnackBar(
+            context,
+            'Subject updated successfully',
+            Colors.green.shade600,
+            Icons.check_circle_rounded,
+          );
+        }
       }
     }
   }
@@ -586,25 +611,39 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
 
     final int currentDay = DateTime.now().weekday;
 
-    return Center(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: Padding(
-            padding: const EdgeInsets.all(24),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: MediaQuery.of(context).size.width - 80,
+            ),
             child: Table(
-              defaultColumnWidth: const FixedColumnWidth(180),
+              defaultColumnWidth: const IntrinsicColumnWidth(),
+              columnWidths: const {
+                0: FixedColumnWidth(120),
+                1: FixedColumnWidth(120),
+                2: FixedColumnWidth(120),
+                3: FixedColumnWidth(120),
+                4: FixedColumnWidth(120),
+                5: FixedColumnWidth(120),
+                6: FixedColumnWidth(120),
+              },
               border: TableBorder.all(
                 color: Colors.grey.shade200,
                 width: 1.5,
@@ -642,37 +681,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                   ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  int _getMaxClassesPerDay(Map<int, List<ClassSchedule>> schedulesByDay) {
-    int max = 0;
-    for (var schedules in schedulesByDay.values) {
-      if (schedules.length > max) {
-        max = schedules.length;
-      }
-    }
-    return max > 0 ? max : 1;
-  }
-
-  Widget _buildTableHeaderCell(String dayName, bool isToday) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: isToday ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
-      ),
-      child: Center(
-        child: Text(
-          dayName,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: isToday ? Theme.of(context).colorScheme.primary : Colors.grey.shade700,
-            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -751,16 +759,18 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                 color: Colors.grey.shade600,
               ),
               const SizedBox(width: 4),
-              Text(
-                schedule.startTime,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
+              Flexible(
+                child: Text(
+                  '${schedule.startTime} - ${schedule.endTime}',  // ← Show both times
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,  // Slightly smaller to fit both times
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -964,6 +974,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     );
   }
 
+
   Widget _buildEmptyState() {
     return Padding(
       padding: const EdgeInsets.all(40),
@@ -1003,6 +1014,44 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         ],
       ),
     );
+  }
+
+  // Add these methods inside _DashboardScreenState class, near the other helper methods at the bottom
+
+  Widget _buildTableHeaderCell(String text, bool isToday) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      decoration: BoxDecoration(
+        color: isToday
+            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+            : Colors.grey.shade50,
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+          color: isToday
+              ? Theme.of(context).colorScheme.primary
+              : const Color(0xFF2D3748),
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  int _getMaxClassesPerDay(Map<int, List<ClassSchedule>> schedulesByDay) {
+    if (schedulesByDay.isEmpty) return 0;
+
+    int maxClasses = 0;
+    for (var daySchedules in schedulesByDay.values) {
+      if (daySchedules.length > maxClasses) {
+        maxClasses = daySchedules.length;
+      }
+    }
+
+    return maxClasses;
   }
 
   Widget _buildModernFAB(BuildContext context) {
@@ -1069,4 +1118,4 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[month - 1];
   }
-}
+}  // This is the closing brace of _DashboardScreenState class
